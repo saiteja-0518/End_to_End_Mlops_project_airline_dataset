@@ -1,0 +1,164 @@
+schema: '2.0'
+stages:
+  data_ingestion:
+    cmd: python src/data_ingestion.py
+    deps:
+    - path: data/raw/airline_passenger_satisfaction.csv
+      hash: md5
+      md5: 0b5aebedfe1df3aae9cc34f0891e14d9
+      size: 12875197
+    - path: src/data_ingestion.py
+      hash: md5
+      md5: 0a1d45848d93ee691da4680a5d60a696
+      size: 616
+    outs:
+    - path: data/ingested/airline.csv
+      hash: md5
+      md5: 0a8d66f43645cd5e29a1a6cd4b2210e6
+      size: 13134171
+  data_preprocessing:
+    cmd: python src/data_preprocessing.py
+    deps:
+    - path: data/ingested/airline.csv
+      hash: md5
+      md5: 0a8d66f43645cd5e29a1a6cd4b2210e6
+      size: 13134171
+    - path: src/data_preprocessing.py
+      hash: md5
+      md5: ba59d170ca8dcb820d402c04225b8164
+      size: 1310
+    params:
+      params.yaml:
+        random_state: 42
+        test_size: 0.2
+    outs:
+    - path: data/processed/test.csv
+      hash: md5
+      md5: d0fa04e4b3bcb89a99a2a3f91d3757f1
+      size: 2053791
+    - path: data/processed/train.csv
+      hash: md5
+      md5: 7047152e5bc4dd52b398cd58aea27f16
+      size: 8215325
+  feature_engineering:
+    cmd: python src/feature_engineering.py
+    deps:
+    - path: data/processed/test.csv
+      hash: md5
+      md5: d0fa04e4b3bcb89a99a2a3f91d3757f1
+      size: 2053791
+    - path: data/processed/train.csv
+      hash: md5
+      md5: 7047152e5bc4dd52b398cd58aea27f16
+      size: 8215325
+    - path: src/feature_engineering.py
+      hash: md5
+      md5: cb6e8cffa06fd644152a1ecd0bd115e3
+      size: 885
+    outs:
+    - path: data/processed/X_test.csv
+      hash: md5
+      md5: 83aea9e2b324cb85447a15b8d7989821
+      size: 2001826
+    - path: data/processed/X_train.csv
+      hash: md5
+      md5: 9208d1c519316ff72d2d4d9ad0805d30
+      size: 8007504
+    - path: data/processed/y_test.csv
+      hash: md5
+      md5: c769f1a90fb708d8cce80c59be0a0911
+      size: 77942
+    - path: data/processed/y_train.csv
+      hash: md5
+      md5: 105843a902067095811fb9cf58d2f311
+      size: 311726
+  model_building:
+    cmd: python src/model_building.py
+    deps:
+    - path: data/processed/X_train.csv
+      hash: md5
+      md5: 9208d1c519316ff72d2d4d9ad0805d30
+      size: 8007504
+    - path: data/processed/y_train.csv
+      hash: md5
+      md5: 105843a902067095811fb9cf58d2f311
+      size: 311726
+    - path: src/model_building.py
+      hash: md5
+      md5: be2bc9c377d86742541659a909a82884
+      size: 16900
+    params:
+      params.yaml:
+        cv_folds: 3
+        experiment_name: Airline_DVC_Pipeline
+        measurement:
+          training_time_repeats: 1
+          prediction_n_samples: 10
+          prediction_repeats: 3
+        n_trials: 10
+        n_trials_heavy: 5
+        random_state: 42
+        selection:
+          max_accuracy_gap_pct: 5.0
+          accuracy_tolerance_pct: 1.0
+          weights:
+            model_size_mb: 0.4
+            training_time_seconds: 0.3
+            prediction_time_ms: 0.3
+          fallback_if_none_eligible: smallest_gap
+          gap_penalty_in_search: true
+          gap_penalty_weight: 1.0
+    outs:
+    - path: models
+      hash: md5
+      md5: 2045d5a416567dab0b802af2f272602a.dir
+      size: 36827483
+      nfiles: 8
+    - path: reports/model_comparison.csv
+      hash: md5
+      md5: 61e5031f123b2a1c1f67758c95bd4882
+      size: 425
+    - path: reports/model_comparison.md
+      hash: md5
+      md5: 337ac14e1f84092021af65c4031e14de
+      size: 1211
+    - path: reports/model_selection.json
+      hash: md5
+      md5: f38c0adabe9e7a43a81e4a1211bc0ff9
+      size: 3969
+  model_evaluation:
+    cmd: python src/model_evaluation.py
+    deps:
+    - path: data/processed/X_test.csv
+      hash: md5
+      md5: 83aea9e2b324cb85447a15b8d7989821
+      size: 2001826
+    - path: data/processed/y_test.csv
+      hash: md5
+      md5: c769f1a90fb708d8cce80c59be0a0911
+      size: 77942
+    - path: models
+      hash: md5
+      md5: 2045d5a416567dab0b802af2f272602a.dir
+      size: 36827483
+      nfiles: 8
+    - path: reports/model_selection.json
+      hash: md5
+      md5: f38c0adabe9e7a43a81e4a1211bc0ff9
+      size: 3969
+    - path: src/model_evaluation.py
+      hash: md5
+      md5: d169dbda530bd5a2a3304c79f3d065d5
+      size: 2658
+    params:
+      params.yaml:
+        experiment_name: Airline_DVC_Pipeline
+    outs:
+    - path: reports/evaluation_details.json
+      hash: md5
+      md5: 8819bb6f71cebcecd7ae8f70cf561f7c
+      size: 1633
+    - path: reports/metrics.json
+      hash: md5
+      md5: 73f3ee5358b73be2684ab303276cdf1b
+      size: 231
