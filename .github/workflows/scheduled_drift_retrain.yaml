@@ -1,0 +1,147 @@
+name: Scheduled Drift Monitor & Continuous Training
+
+on:
+  schedule:
+    - cron: "0 0 * * 1"  # Every Monday at 00:00 UTC
+  workflow_dispatch:
+    inputs:
+      simulate_drift:
+        description: "Simulate shifted production data (for demo/testing)?"
+        type: boolean
+        default: false
+      force_retrain:
+        description: "Force pipeline reproduction regardless of drift status?"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+env:
+  PYTHON_VERSION: "3.11"
+  MIN_ACCURACY: "0.85"
+
+jobs:
+  monitor-and-retrain:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: requirements-dvc.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements-dvc.txt
+
+      - name: Run statistical drift analysis (KS-Test)
+        id: run_drift
+        env:
+          SIMULATE_DRIFT: ${{ github.event.inputs.simulate_drift }}
+          ALERT_WEBHOOK_URL: ${{ secrets.ALERT_WEBHOOK_URL }}
+        run: |
+          ARGS="--generate-sample-data"
+          if [ "$SIMULATE_DRIFT" == "true" ]; then
+            ARGS="$ARGS --simulate-drift"
+          fi
+          python src/monitor_drift.py $ARGS
+
+      - name: Publish drift alert to step summary
+        if: always()
+        run: |
+          if [ -f reports/drift_alert.md ]; then
+            cat reports/drift_alert.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Evaluate drift decision gates
+        id: evaluate_drift
+        env:
+          FORCE_RETRAIN: ${{ github.event.inputs.force_retrain }}
+        run: |
+          python - <<'PY'
+          import json, os
+
+          with open("reports/drift_report.json") as f:
+              report = json.load(f)
+
+          drift_detected = bool(report.get("dataset_drift_detected", False))
+          force = os.environ.get("FORCE_RETRAIN", "false").lower() == "true"
+          should_retrain = drift_detected or force
+
+          print(f"Dataset drift detected: {drift_detected}")
+          print(f"Continuous retraining triggered: {should_retrain}")
+
+          with open(os.environ["GITHUB_OUTPUT"], "a") as out:
+              out.write(f"drift_detected={str(drift_detected).lower()}\n")
+              out.write(f"should_retrain={str(should_retrain).lower()}\n")
+          PY
+
+      - name: Create GitHub Issue Alert on Drift
+        if: steps.evaluate_drift.outputs.drift_detected == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Emitting GitHub Issue Alert..."
+          gh issue create \
+            --title "🚨 [MLOps Alert] Production Data Drift Detected ($(date +'%Y-%m-%d'))" \
+            --body-file reports/drift_alert.md || true
+
+      - name: Execute Continuous Training (DVC Repro)
+        if: steps.evaluate_drift.outputs.should_retrain == 'true'
+        run: |
+          echo "Starting automated model retraining pipeline..."
+          pytest tests/ -v
+          dvc repro
+          dvc metrics show
+
+      - name: Quality gate validation for retrained champion
+        if: steps.evaluate_drift.outputs.should_retrain == 'true'
+        run: |
+          python - <<'PY'
+          import json, os, sys, yaml
+          metrics = json.load(open("reports/metrics.json"))
+          selection = json.load(open("reports/model_selection.json"))
+          params = yaml.safe_load(open("params.yaml"))
+
+          min_acc = float(os.environ["MIN_ACCURACY"])
+          max_gap = float(params["selection"]["max_accuracy_gap_pct"])
+
+          test_acc = metrics["accuracy"]
+          gap = metrics["champion_accuracy_gap_pct"]
+
+          print(f"Retrained Champion: {selection['champion']['model_name']}")
+          print(f"Test Accuracy: {test_acc:.4f} (min: {min_acc})")
+          print(f"Overfitting Gap: {gap:.2f}pp (max: {max_gap}pp)")
+
+          if test_acc < min_acc or gap >= max_gap:
+              print("Quality Gate Rejected Retrained Champion!")
+              sys.exit(1)
+          print("Retrained Champion Passed Quality Gate!")
+          PY
+
+      - name: Commit and push retrained artifacts
+        if: steps.evaluate_drift.outputs.should_retrain == 'true'
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add dvc.lock reports/
+          if ! git diff-index --quiet HEAD; then
+            git commit -m "chore(continuous-training): automated retraining following drift detection [skip ci]"
+            git push origin main
+          else
+            echo "Artifacts are identical; no commit necessary."
+          fi
+
+      - name: Log status when retraining is skipped
+        if: steps.evaluate_drift.outputs.should_retrain != 'true'
+        run: |
+          echo "✅ Production traffic distribution is healthy."
+          echo "Continuous retraining skipped to conserve compute and avoid redundant runs."

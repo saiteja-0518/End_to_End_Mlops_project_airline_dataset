@@ -1,0 +1,4 @@
+timestamp,Gender,Customer Type,Type of Travel,Class,Age,Flight Distance,Departure Delay,Arrival Delay,Departure and Arrival Time Convenience,Ease of Online Booking,Check-in Service,Online Boarding,Gate Location,On-board Service,Seat Comfort,Leg Room Service,Cleanliness,Food and Drink,In-flight Service,In-flight Wifi Service,In-flight Entertainment,Baggage Handling,predicted_class,prob_Dissatisfied,prob_Satisfied
+2026-11-24T10:06:30.919876+00:00,Male,First-time,Business,Business,35.0,1000.0,0.0,0.0,3.0,3.0,3.0,4.0,3.0,4.0,4.0,4.0,4.0,3.0,4.0,3.0,4.0,4.0,0,1.0,0.0
+2026-11-24T10:07:47.811217+00:00,Female,First-time,Business,Business,30.0,1000.0,0.0,0.0,3.0,5.0,5.0,5.0,5.0,4.0,4.0,4.0,4.0,5.0,5.0,5.0,5.0,5.0,1,0.0,1.0
+2026-11-24T10:13:27.020856+00:00,Female,First-time,Business,Business,30.0,1000.0,0.0,0.0,3.0,5.0,5.0,1.0,0.0,5.0,4.0,4.0,4.0,2.0,2.0,5.0,5.0,1.0,1,0.0,1.0
