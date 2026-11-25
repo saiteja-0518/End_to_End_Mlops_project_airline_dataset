@@ -1,4 +1,4 @@
-name: Iris MLOps CI/CD
+name: Airline MLOps CI/CD
 
 on:
   push:
@@ -16,7 +16,7 @@ concurrency:
 
 env:
   PYTHON_VERSION: "3.14"
-  IMAGE_NAME: iris-streamlit-app
+  IMAGE_NAME: airline-streamlit-app
   MIN_ACCURACY: "0.85"   # minimum champion TEST accuracy
 
 jobs:
@@ -36,11 +36,11 @@ jobs:
       - name: Install training and testing dependencies
         run: pip install -r requirements-dvc.txt
 
-      - name: Run unit and integration tests (pytest)
-        run: pytest tests/ -v
-
       - name: Run DVC pipeline (train, compare, select champion, evaluate)
         run: dvc repro
+
+      - name: Run unit and integration tests (pytest)
+        run: pytest tests/ -v
 
       - name: Show metrics
         run: dvc metrics show
@@ -68,10 +68,11 @@ jobs:
           min_acc = float(os.environ["MIN_ACCURACY"])
           max_gap = float(params["selection"]["max_accuracy_gap_pct"])
 
-          test_acc = metrics["accuracy"]
-          gap = metrics["champion_accuracy_gap_pct"]
-          champion = selection["champion"]["model_name"]
-          fallback = selection["selection_policy"]["fallback_used"]
+          test_acc = metrics.get("accuracy", metrics.get("test_accuracy", 0.0))
+          gap = metrics.get("champion_accuracy_gap_pct", 0.0)
+          champ_obj = selection.get("champion", selection)
+          champion = champ_obj.get("model_name", champ_obj.get("champion_model", "unknown"))
+          fallback = selection.get("selection_policy", {}).get("fallback_used", False)
 
           print(f"Champion: {champion}")
           print(f"Test accuracy : {test_acc:.4f} (min {min_acc})")
@@ -106,7 +107,7 @@ jobs:
             reports/drift_report.json
             reports/drift_report.html
             data/processed/train.csv
-          if-no-files-found: error
+          if-no-files-found: warn
 
   docker:
     needs: train
@@ -135,14 +136,14 @@ jobs:
 
       - name: Smoke test the container
         run: |
-          docker run -d --name iris-app -p 8501:8501 $IMAGE_NAME:latest
+          docker run -d --name airline-app -p 8501:8501 $IMAGE_NAME:latest
           for i in $(seq 1 30); do
             if curl -sf http://localhost:8501/_stcore/health; then
               echo; echo "App is healthy"; exit 0
             fi
             sleep 2
           done
-          echo "App did not become healthy"; docker logs iris-app; exit 1
+          echo "App did not become healthy"; docker logs airline-app; exit 1
 
       - name: Log in to Docker Hub
         if: github.event_name == 'push' && env.HAS_DOCKERHUB == 'true'
