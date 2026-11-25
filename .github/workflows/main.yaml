@@ -34,7 +34,9 @@ jobs:
           cache-dependency-path: requirements-dvc.txt
 
       - name: Install training and testing dependencies
-        run: pip install -r requirements-dvc.txt
+        run: |
+          pip install -r requirements-dvc.txt
+          pip install optuna-integration
 
       - name: Run DVC pipeline (train, compare, select champion, evaluate)
         run: dvc repro
