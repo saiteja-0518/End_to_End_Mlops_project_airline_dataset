@@ -31,11 +31,13 @@ An enterprise-ready, reproducible Machine Learning Operations (MLOps) system bui
                   [data/monitoring/inference_logs.csv]
                               │
                               ▼
-                  6. KS Drift Monitor (src/monitor_drift.py)
+6. KS Drift Monitor (src/monitor_drift.py)
                               │
                    (If Drift >= 50% Features)
                               ▼
              GitHub Issue / Webhook Alert + Auto-Retrain CT
+```
+
 ---
 
 ## 📁 Repository Directory Structure
@@ -81,15 +83,17 @@ An enterprise-ready, reproducible Machine Learning Operations (MLOps) system bui
 ├── params.yaml                             # Centralized configuration parameters
 ├── requirements-dvc.txt                    # Training, testing, DVC, Optuna, and MLflow dependencies
 └── requirements.txt                        # Minimal serving dependencies for Docker runtime
+```
+
 ---
 
 ## ⚡ Core MLOps Pillars in This Project
 
 ### 1. Data & Pipeline Versioning (`DVC`)
 The 5-stage ML workflow is declared in `dvc.yaml` and locked via MD5 hashes in `dvc.lock`:
-* **Zero-Redundancy Caching:** Running `dvc repro` hashes every input file, script, and `params.yaml` hyperparameter. Unchanged stages are skipped instantly.
-* **Zero Data Leakage:** Missing value imputation (`Arrival Delay`), standard scaling (18 numerical columns), and one-hot encoding (4 categorical columns) are encapsulated inside a Scikit-Learn `ColumnTransformer` within `models/model.pkl`—ensuring training and live Docker inference apply identical transformations.
-* **Quarantined Test Set:** The 25,976-row test split is completely untouched during cross-validation and hyperparameter tuning, used strictly once during `model_evaluation.py`.
+- **Zero-Redundancy Caching:** Running `dvc repro` hashes every input file, script, and `params.yaml` hyperparameter. Unchanged stages are skipped instantly.
+- **Zero Data Leakage:** Missing value imputation (`Arrival Delay`), standard scaling (18 numerical columns), and one-hot encoding (4 categorical columns) are encapsulated inside a Scikit-Learn `ColumnTransformer` within `models/model.pkl`—ensuring training and live Docker inference apply identical transformations.
+- **Quarantined Test Set:** The 25,976-row test split is completely untouched during cross-validation and hyperparameter tuning, used strictly once during `model_evaluation.py`.
 
 ### 2. Multi-Model Bayesian Search & Champion Selection
 `src/model_building.py` tunes candidate models using **Optuna (TPE Sampler)** with **MLflow** experiment logging and selects the production champion using explicit engineering constraints (`params.yaml`):
@@ -99,18 +103,19 @@ The 5-stage ML workflow is declared in `dvc.yaml` and locked via MD5 hashes in `
 
 ### 3. Production Data Drift Monitoring (`Kolmogorov-Smirnov Test`)
 Every prediction made through `app.py` is appended to `data/monitoring/inference_logs.csv` with a 26-column audit schema (UTC timestamp, 22 passenger inputs, predicted class, and class probabilities):
-* **Two-Sample KS Test:** `src/monitor_drift.py` compares live production traffic against the training baseline (`data/processed/train.csv`) across all **18 numerical features** (`p < 0.05` flags feature drift).
-* **Dataset Drift Threshold:** If `>= 50%` of features drift simultaneously, dataset-level drift is triggered, generating `reports/drift_report.json`, `reports/drift_report.html`, and an incident summary in `reports/drift_alert.md`.
+- **Two-Sample KS Test:** `src/monitor_drift.py` compares live production traffic against the training baseline (`data/processed/train.csv`) across all **18 numerical features** (`p < 0.05` flags feature drift).
+- **Dataset Drift Threshold:** If `>= 50%` of features drift simultaneously, dataset-level drift is triggered, generating `reports/drift_report.json`, `reports/drift_report.html`, and an incident summary in `reports/drift_alert.md`.
 
 ### 4. Hardened Containerization (`Docker`)
 The `Dockerfile` builds a lightweight, security-hardened production container:
-* **Base Image:** `python:3.14-slim` with minimal runtime packages (`requirements.txt`).
-* **Non-Root Security:** Runs under an unprivileged `appuser` (UID `1000`) instead of `root`.
-* **Self-Healing Healthcheck:** Built-in Docker `HEALTHCHECK` polls `http://localhost:8501/_stcore/health` every 30 seconds so orchestrators automatically detect and restart unhealthy instances.
+- **Base Image:** `python:3.14-slim` with minimal runtime packages (`requirements.txt`).
+- **Non-Root Security:** Runs under an unprivileged `appuser` (UID `1000`) instead of `root`.
+- **Self-Healing Healthcheck:** Built-in Docker `HEALTHCHECK` polls `http://localhost:8501/_stcore/health` every 30 seconds so orchestrators automatically detect and restart unhealthy instances.
 
 ### 5. CI/CD & Continuous Training (`GitHub Actions`)
-* **CI/CD Pipeline (`.github/workflows/main.yaml`):** Runs on every push/PR to `main`—executes `dvc repro`, runs all **11 `pytest` tests**, enforces automated accuracy & overfitting quality gates, builds the Docker image, and verifies container health.
-* **Scheduled Continuous Training (`.github/workflows/scheduled_drift_retrain.yaml`):** Runs weekly to inspect live drift logs; if drift is detected, it opens a GitHub Incident Issue, dispatches webhook alerts, retrains the champion model via `dvc repro`, and commits updated artifacts.
+- **CI/CD Pipeline (`.github/workflows/main.yaml`):** Runs on every push/PR to `main`—executes `dvc repro`, runs all **11 `pytest` tests**, enforces automated accuracy & overfitting quality gates, builds the Docker image, and verifies container health.
+- **Scheduled Continuous Training (`.github/workflows/scheduled_drift_retrain.yaml`):** Runs weekly to inspect live drift logs; if drift is detected, it opens a GitHub Incident Issue, dispatches webhook alerts, retrains the champion model via `dvc repro`, and commits updated artifacts.
+
 ---
 
 ## 📊 Dataset Features (22 Inputs + 1 Target)
@@ -138,34 +143,41 @@ myenv\Scripts\activate
 source myenv/bin/activate
 
 pip install -r requirements-dvc.txt
-Step 2: Reproduce the Full DVC Pipeline
+```
 
+### Step 2: Reproduce the Full DVC Pipeline
+```bash
 dvc repro
 dvc metrics show
-Step 3: Run the Automated Pytest Suite (11 Tests)
+```
 
+### Step 3: Run the Automated Pytest Suite (11 Tests)
+```bash
 pytest tests/ -v
-Step 4: Run Production Data Drift Analysis
+```
 
+### Step 4: Run Production Data Drift Analysis
+```bash
 # Run baseline drift check:
 python src/monitor_drift.py --generate-sample-data
 
 # Simulate distribution shift (triggers alert report):
 python src/monitor_drift.py --simulate-drift
-Step 5: Launch the Streamlit Web App Locally
+```
 
+### Step 5: Launch the Streamlit Web App Locally
+```bash
 streamlit run app.py
-Open http://localhost:8501 in your browser:
+```
+Open `http://localhost:8501` in your browser:
+- **Live Inference:** Interactive 22-feature passenger form with real-time probability chart and automatic request logging.
+- **Model Lineage & Metrics:** Champion performance summary and candidate model comparison table.
+- **Data Drift & Monitoring:** One-click live Kolmogorov-Smirnov drift audit against `data/processed/train.csv`.
 
-Live Inference: Interactive 22-feature passenger form with real-time probability chart and automatic request logging.
-
-Model Lineage & Metrics: Champion performance summary and candidate model comparison table.
-
-Data Drift & Monitoring: One-click live Kolmogorov-Smirnov drift audit against data/processed/train.csv.
-
-Step 6: Build & Run with Docker
-
+### Step 6: Build & Run with Docker
+```bash
 docker build -t airline-mlops-app:latest .
 docker run -d -p 8501:8501 --name airline-app airline-mlops-app:latest
 docker ps
-Once docker ps shows (healthy), open http://localhost:8501 in your browser.
+```
+Once `docker ps` shows `(healthy)`, open `http://localhost:8501` in your browser.
