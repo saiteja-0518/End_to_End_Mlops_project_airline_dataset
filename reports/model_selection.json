@@ -1,0 +1,137 @@
+{
+  "champion": {
+    "model_name": "DecisionTree",
+    "model_path": "models\\DecisionTree_airline_model.pkl",
+    "best_params": {
+      "scaler_type": "minmax",
+      "criterion": "entropy",
+      "max_depth": 16,
+      "min_samples_split": 13,
+      "min_samples_leaf": 1,
+      "max_features": null
+    },
+    "cv_train_accuracy": 0.9694,
+    "cv_val_accuracy": 0.9518,
+    "gap_pct": 1.75,
+    "training_time_seconds": 2.0746,
+    "prediction_time_ms": 12.5148,
+    "model_size_mb": 0.1464
+  },
+  "selection_rules": {
+    "max_accuracy_gap_pct": 5.0,
+    "accuracy_tolerance_pct": 1.0,
+    "weights": {
+      "model_size_mb": 0.4,
+      "training_time_seconds": 0.3,
+      "prediction_time_ms": 0.3
+    },
+    "fallback_if_none_eligible": "smallest_gap",
+    "gap_penalty_in_search": true,
+    "gap_penalty_weight": 1.0
+  },
+  "candidates": [
+    {
+      "model_name": "KNN",
+      "model_path": "models\\KNN_airline_model.pkl",
+      "best_params": {
+        "scaler_type": "minmax",
+        "n_neighbors": 17,
+        "weights": "uniform",
+        "p": 1
+      },
+      "cv_train_accuracy": 0.9198,
+      "cv_val_accuracy": 0.9115,
+      "gap_pct": 0.83,
+      "training_time_seconds": 0.1442,
+      "prediction_time_ms": 12.9579,
+      "model_size_mb": 3.2107
+    },
+    {
+      "model_name": "DecisionTree",
+      "model_path": "models\\DecisionTree_airline_model.pkl",
+      "best_params": {
+        "scaler_type": "minmax",
+        "criterion": "entropy",
+        "max_depth": 16,
+        "min_samples_split": 13,
+        "min_samples_leaf": 1,
+        "max_features": null
+      },
+      "cv_train_accuracy": 0.9694,
+      "cv_val_accuracy": 0.9518,
+      "gap_pct": 1.75,
+      "training_time_seconds": 2.0746,
+      "prediction_time_ms": 12.5148,
+      "model_size_mb": 0.1464
+    },
+    {
+      "model_name": "SVM",
+      "model_path": "models\\SVM_airline_model.pkl",
+      "best_params": {
+        "scaler_type": "minmax",
+        "kernel": "linear",
+        "C": 0.15876781526924
+      },
+      "cv_train_accuracy": 0.874,
+      "cv_val_accuracy": 0.8733,
+      "gap_pct": 0.06,
+      "training_time_seconds": 4.5623,
+      "prediction_time_ms": 14.4814,
+      "model_size_mb": 0.9075
+    },
+    {
+      "model_name": "GaussianNB",
+      "model_path": "models\\GaussianNB_airline_model.pkl",
+      "best_params": {
+        "scaler_type": "minmax",
+        "var_smoothing": 8.47180141881997e-09
+      },
+      "cv_train_accuracy": 0.8464,
+      "cv_val_accuracy": 0.8462,
+      "gap_pct": 0.02,
+      "training_time_seconds": 0.9684,
+      "prediction_time_ms": 15.2728,
+      "model_size_mb": 0.0072
+    },
+    {
+      "model_name": "RandomForest",
+      "model_path": "models\\RandomForest_airline_model.pkl",
+      "best_params": {
+        "scaler_type": "standard",
+        "n_estimators": 150,
+        "criterion": "entropy",
+        "max_depth": 18,
+        "min_samples_split": 7,
+        "min_samples_leaf": 11,
+        "max_features": "sqrt",
+        "bootstrap": true
+      },
+      "cv_train_accuracy": 0.9634,
+      "cv_val_accuracy": 0.956,
+      "gap_pct": 0.74,
+      "training_time_seconds": 16.8635,
+      "prediction_time_ms": 124.7027,
+      "model_size_mb": 29.0696
+    },
+    {
+      "model_name": "GradientBoosting",
+      "model_path": "models\\GradientBoosting_airline_model.pkl",
+      "best_params": {
+        "scaler_type": "minmax",
+        "n_estimators": 200,
+        "learning_rate": 0.08700865271749024,
+        "max_depth": 6,
+        "min_samples_split": 11,
+        "min_samples_leaf": 11,
+        "max_features": "sqrt",
+        "subsample": 0.7323674280979913
+      },
+      "cv_train_accuracy": 0.9681,
+      "cv_val_accuracy": 0.9606,
+      "gap_pct": 0.75,
+      "training_time_seconds": 36.4345,
+      "prediction_time_ms": 14.2888,
+      "model_size_mb": 1.6302
+    }
+  ]
+}
