@@ -8,7 +8,11 @@ import streamlit as st
 from src.monitor_drift import analyze_drift, load_inference_logs, log_inference
 
 BASE_DIR = Path(__file__).parent
-MODEL_PATH = BASE_DIR / "models" / "model.pkl"
+MODEL_PATH = (
+    BASE_DIR / "model.pkl"
+    if (BASE_DIR / "model.pkl").exists()
+    else BASE_DIR / "models" / "model.pkl"
+)
 SELECTION_PATH = BASE_DIR / "reports" / "model_selection.json"
 METRICS_PATH = BASE_DIR / "reports" / "metrics.json"
 COMP_CSV_PATH = BASE_DIR / "reports" / "model_comparison.csv"
@@ -85,7 +89,7 @@ selection, metrics = load_reports()
 if model is None:
     st.error(
         f"Model not found at `{MODEL_PATH}`. "
-        "Run `dvc repro` (or `dvc pull`) to generate `models/model.pkl`."
+        "Ensure `model.pkl` is present in the project root or run `dvc repro` to generate `models/model.pkl`."
     )
     st.stop()
 
