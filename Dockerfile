@@ -17,7 +17,7 @@ COPY --chown=appuser:appuser app.py .
 COPY --chown=appuser:appuser src/ src/
 COPY --chown=appuser:appuser models/ models/
 COPY --chown=appuser:appuser reports/ reports/
-COPY --chown=appuser:appuser data/processed/train.csv data/processed/train.csv
+COPY --chown=appuser:appuser data/processed/X_train.csv data/processed/X_train.csv
 
 USER appuser
 EXPOSE 8501
