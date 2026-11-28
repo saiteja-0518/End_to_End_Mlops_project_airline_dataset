@@ -13,10 +13,26 @@ MODEL_PATH = (
     if (BASE_DIR / "model.pkl").exists()
     else BASE_DIR / "models" / "model.pkl"
 )
-SELECTION_PATH = BASE_DIR / "reports" / "model_selection.json"
-METRICS_PATH = BASE_DIR / "reports" / "metrics.json"
-COMP_CSV_PATH = BASE_DIR / "reports" / "model_comparison.csv"
-REFERENCE_DATA_PATH = BASE_DIR / "data" / "processed" / "train.csv"
+SELECTION_PATH = (
+    BASE_DIR / "streamlit_assets" / "model_selection.json"
+    if (BASE_DIR / "streamlit_assets" / "model_selection.json").exists()
+    else BASE_DIR / "reports" / "model_selection.json"
+)
+METRICS_PATH = (
+    BASE_DIR / "streamlit_assets" / "metrics.json"
+    if (BASE_DIR / "streamlit_assets" / "metrics.json").exists()
+    else BASE_DIR / "reports" / "metrics.json"
+)
+COMP_CSV_PATH = (
+    BASE_DIR / "streamlit_assets" / "model_comparison.csv"
+    if (BASE_DIR / "streamlit_assets" / "model_comparison.csv").exists()
+    else BASE_DIR / "reports" / "model_comparison.csv"
+)
+REFERENCE_DATA_PATH = (
+    BASE_DIR / "streamlit_assets" / "train.csv"
+    if (BASE_DIR / "streamlit_assets" / "train.csv").exists()
+    else BASE_DIR / "data" / "processed" / "train.csv"
+)
 INFERENCE_LOG_PATH = BASE_DIR / "data" / "monitoring" / "inference_logs.csv"
 
 FEATURES = [
