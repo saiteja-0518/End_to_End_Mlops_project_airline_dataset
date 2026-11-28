@@ -41,6 +41,9 @@ jobs:
       - name: Run DVC pipeline (train, compare, select champion, evaluate)
         run: dvc repro
 
+      - name: Sync root model.pkl from freshly trained champion
+        run: cp models/model.pkl model.pkl
+
       - name: Run unit and integration tests (pytest)
         run: pytest tests/ -v
 
@@ -100,14 +103,8 @@ jobs:
         with:
           name: model-artifacts
           path: |
-            models/model.pkl
-            reports/metrics.json
-            reports/evaluation_details.json
-            reports/model_selection.json
-            reports/model_comparison.csv
-            reports/model_comparison.md
-            reports/drift_report.json
-            reports/drift_report.html
+            models/
+            reports/
             data/processed/train.csv
           if-no-files-found: warn
 
@@ -129,7 +126,8 @@ jobs:
       - name: Place artifacts where the Dockerfile expects them
         run: |
           mkdir -p models reports data/processed
-          cp artifacts/models/model.pkl models/model.pkl
+          cp -r artifacts/models/* models/ 2>/dev/null || true
+          cp artifacts/models/model.pkl model.pkl 2>/dev/null || true
           cp -r artifacts/reports/* reports/ 2>/dev/null || true
           cp artifacts/data/processed/train.csv data/processed/train.csv 2>/dev/null || true
 
